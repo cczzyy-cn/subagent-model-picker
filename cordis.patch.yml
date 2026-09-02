@@ -1,0 +1,6 @@
+# @dsh-external/dsh-subagent-model-picker bundle layer
+# Mounts the plugin row so the Loader imports its apply() and registers the
+# `list_subagent_models` / `subagent_model` tools into this profile.
+- insert:
+  - id: subagent-model-picker
+    name: '@dsh-external/dsh-subagent-model-picker'
