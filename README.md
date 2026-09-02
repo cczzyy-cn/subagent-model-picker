@@ -136,6 +136,53 @@ DSH_CHECKOUT=/path/to/deepseek-harness bash scripts/build.sh
 
 ---
 
+## 权限、依赖、外部服务与失败边界（DSH STORE 上架契约）
+
+### 依赖
+- **运行时依赖**：`schemastery`（纯 schema 构建库，用于声明 `subagent-model-picker` 设置命名空间的 schema）。
+  该依赖由 DSH STORE 供应链复查把关。
+- **Peer 依赖（宿主提供）**：`@deepseek-ai/dsh-llm`、`@deepseek-ai/dsh-subagent`、`@deepseek-ai/dsh-system-prompt`、
+  `@deepseek-ai/dsh-tools`、`cordis`。这些由 DSH 宿主在运行时注入，不属于本插件安装的运行时依赖。
+- **无 optional 依赖**。
+
+### 权限说明
+本插件**不直接做文件系统写、不 spawn 子进程、不对外发起网络请求**。它仅通过 DSH 宿主的服务协作：
+- `ctx.settings`：读/写 `subagent-model-picker` 设置命名空间（读写由宿主设置服务代为落盘，插件自身不碰文件系统）；
+- `ctx.llm`：只读调用 `listProviders` / `listConfigurableProviders` / `listModels`；
+- `ctx.subagents`：经宿主 spawn 子代理（子代理的进程/网络由宿主管理）。
+
+> 说明：DSH STORE 扫描到的 “files permission signal” 是**误报**——源码中的 `exec`/`spawn`/`access`
+> 命中了工具参数名/上下文名（如 `execute`/`exec`、`access`），并非真实的 `child_process`/`fs` 调用。
+
+### 外部服务
+插件自身无出站网络。它枚举与派发所依赖的 LLM provider 由部署侧配置：
+- `deepseek-official`：DeepSeek 官方远程 API；
+- `qwen`：本地 Ollama（`apiKey: ollama` / `apiKeyEnv: qwen`）。
+
+### 失败边界
+- 无 `ctx.subagents` 传输 provider → 报错 `subagent_model: no ctx.subagents provider is registered`；
+- `listModels(pid)` 为空 → 回退 `declaredModels`（设置段声明模型）；仍为空则该项不列出（advisory）；
+- `modelPool` 非空 → 白名单外的 `provider/model` 路由被 `subagent_model` 拒绝；
+- `strictCatalog` 为 true → 不在广告目录中的 model 被拒绝（默认仅标记不拒绝）；
+- 运行中的 `list_subagent_models` 异常只影响该次列举，不影响宿主主流程。
+
+### 兼容范围
+- **Node.js**：`engines.node >= 20`（见 `package.json`）。
+- **DSH**：通过 `peerDependencies` 声明 `@deepseek-ai/dsh-llm`、`@deepseek-ai/dsh-subagent`、
+  `@deepseek-ai/dsh-system-prompt`、`@deepseek-ai/dsh-tools`、`cordis` 的兼容范围。
+
+### 一次性 Profile 安装-启动-卸载证据
+在一次性临时 profile 中验证（宿主插件为 `dsh.bundle`，自动挂载）：
+```bash
+dsh plugin --profile tmp add github:cczzyy-cn/subagent-model-picker#v0.3.2
+dsh profile start tmp &            # 启动，确认加载到 `subagent-model-picker` bundle
+dsh plugin --profile tmp rm @dsh-external/dsh-subagent-model-picker
+dsh profile stop tmp               # 卸载后 profile 干净退出
+```
+上述步骤已验证：安装后 `dsh --dump-config` 组合出 `subagent-model-picker` 行；启动无重复 entry id；移除后不再侵入 profile。
+
+---
+
 ## 版本要点
 
 - **v0.3.2** — `list_subagent_models` 无参调用**枚举所有** provider（此前被限制为默认 provider）；

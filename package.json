@@ -8,7 +8,8 @@
   "types": "./lib/types/index.d.ts",
   "files": [
     "lib",
-    "cordis.patch.yml"
+    "cordis.patch.yml",
+    "LICENSE"
   ],
   "dsh": {
     "bundle": {
@@ -33,5 +34,12 @@
   "scripts": {
     "build": "bash scripts/build.sh",
     "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cczzyy-cn/subagent-model-picker.git"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
