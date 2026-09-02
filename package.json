@@ -1,6 +1,6 @@
 {
   "name": "@dsh-external/dsh-subagent-model-picker",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "让主会话模型从已配置模型里自主选择子代理模型",
   "private": true,
   "type": "module",
@@ -16,13 +16,15 @@
     }
   },
   "license": "BSD-3-Clause",
+  "dependencies": {
+    "schemastery": "^3.18.0"
+  },
   "peerDependencies": {
     "@deepseek-ai/dsh-llm": ">=0.0.1-rc <2",
     "@deepseek-ai/dsh-subagent": ">=0.0.1-rc <2",
     "@deepseek-ai/dsh-system-prompt": ">=0.0.1-rc <2",
     "@deepseek-ai/dsh-tools": ">=0.0.1-rc <2",
-    "cordis": ">=4.0.0-rc <5",
-    "schemastery": "^3.18.0"
+    "cordis": ">=4.0.0-rc <5"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
