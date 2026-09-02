@@ -16,6 +16,45 @@ import type { Context } from 'cordis';
 import z from 'schemastery';
 export declare const name = "@dsh-external/dsh-subagent-model-picker";
 export declare const inject: string[];
+/** Settings namespace carrying user-authored per-model capability descriptions. */
+export declare const SETTINGS_NS = "subagent-model-picker";
+/** One user-authored capability annotation for a given provider/model route. */
+export declare const ModelDescription: z<Schemastery.ObjectS<{
+    provider: z<string, string>;
+    model: z<string, string>;
+    capabilities: z<string, string>;
+}>, Schemastery.ObjectT<{
+    provider: z<string, string>;
+    model: z<string, string>;
+    capabilities: z<string, string>;
+}>>;
+/** Settings namespace schema: a list of per-model capability descriptions. */
+export declare const SettingsSchema: z<Schemastery.ObjectS<{
+    descriptions: z<({
+        provider?: string | null | undefined;
+        model?: string | null | undefined;
+        capabilities?: string | null | undefined;
+    } & import("@deepseek-ai/cosmokit").Dict)[], Schemastery.ObjectT<{
+        provider: z<string, string>;
+        model: z<string, string>;
+        capabilities: z<string, string>;
+    }>[]>;
+}>, Schemastery.ObjectT<{
+    descriptions: z<({
+        provider?: string | null | undefined;
+        model?: string | null | undefined;
+        capabilities?: string | null | undefined;
+    } & import("@deepseek-ai/cosmokit").Dict)[], Schemastery.ObjectT<{
+        provider: z<string, string>;
+        model: z<string, string>;
+        capabilities: z<string, string>;
+    }>[]>;
+}>>;
+export interface ModelDescriptionValue {
+    provider: string;
+    model: string;
+    capabilities?: string;
+}
 export interface Config {
     /** 默认 LLM provider 路由 id；缺省取父会话 agent 的 provider。 */
     defaultProvider?: string;

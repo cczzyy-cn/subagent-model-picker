@@ -17,7 +17,28 @@ import { defineTool } from '@deepseek-ai/dsh-tools'
 import z from 'schemastery'
 
 export const name = "@dsh-external/dsh-subagent-model-picker"
-export const inject = ['tools', 'subagents', 'llm', 'systemPrompt']
+export const inject = ['tools', 'subagents', 'llm', 'systemPrompt', 'settings']
+
+/** Settings namespace carrying user-authored per-model capability descriptions. */
+export const SETTINGS_NS = 'subagent-model-picker'
+
+/** One user-authored capability annotation for a given provider/model route. */
+export const ModelDescription = z.object({
+  provider: z.string(),
+  model: z.string(),
+  capabilities: z.string().default(''),
+})
+
+/** Settings namespace schema: a list of per-model capability descriptions. */
+export const SettingsSchema = z.object({
+  descriptions: z.array(ModelDescription).default([]),
+})
+
+export interface ModelDescriptionValue {
+  provider: string
+  model: string
+  capabilities?: string
+}
 
 export interface Config {
   /** 默认 LLM provider 路由 id；缺省取父会话 agent 的 provider。 */
@@ -60,9 +81,24 @@ export function apply(ctx: Context, config: Config): void {
   const getSubagents = () => (ctx as any).get('subagents')
   const getLlm = () => (ctx as any).get('llm')
 
+  // 每个模型的能力描述：取自本插件注册的设置命名空间，供主会话挑选时参考。
+  const getSettings = () => (ctx as any).get('settings')
+  const settingsScope = getSettings()?.register?.(SETTINGS_NS, SettingsSchema)
+  const capabilityMap = (): Map<string, string> => {
+    const map = new Map<string, string>()
+    const value = settingsScope?.get?.() as { descriptions?: ModelDescriptionValue[] } | undefined
+    for (const d of value?.descriptions ?? []) {
+      if (d && typeof d.provider === 'string' && typeof d.model === 'string') {
+        map.set(`${d.provider}/${d.model}`, d.capabilities || '')
+      }
+    }
+    return map
+  }
+
   /** 计算“已配置模型”目录：一或多个 provider 的广告模型，可按 modelPool 收窄。 */
-  async function catalog(providerId?: string): Promise<Array<{ provider: string; id: string; name: string }>> {
+  async function catalog(providerId?: string): Promise<Array<{ provider: string; id: string; name: string; capabilities?: string }>> {
     const llm = getLlm()
+    const descMap = capabilityMap()
     let providerIds: string[]
     if (providerId) {
       providerIds = [providerId]
@@ -78,7 +114,7 @@ export function apply(ctx: Context, config: Config): void {
       )]
     }
     const pool = config.modelPool ?? []
-    const out: Array<{ provider: string; id: string; name: string }> = []
+    const out: Array<{ provider: string; id: string; name: string; capabilities?: string }> = []
     for (const pid of providerIds) {
       let models: any[] = []
       try {
@@ -92,7 +128,7 @@ export function apply(ctx: Context, config: Config): void {
         if (typeof id !== 'string' || id.length === 0) continue
         const route = { provider: pid, model: id }
         if (pool.length > 0 && !pool.some((r) => r.provider === pid && r.model === id)) continue
-        out.push({ provider: pid, id, name })
+        out.push({ provider: pid, id, name, capabilities: descMap.get(`${pid}/${id}`) })
       }
     }
     return out
@@ -123,7 +159,10 @@ export function apply(ctx: Context, config: Config): void {
           ? `No configured models found for provider "${provider}".`
           : 'No configured LLM models are currently advertised (listProviders/listModels returned empty).'
       }
-      const lines = models.map((m) => `${m.provider}/${m.id} — ${m.name}`)
+      const lines = models.map((m) => {
+        const cap = m.capabilities ? ` [${m.capabilities}]` : ''
+        return `${m.provider}/${m.id} — ${m.name}${cap}`
+      })
       const heading = provider
         ? `Configured models for provider "${provider}":`
         : 'Configured LLM models available for subagents:'
