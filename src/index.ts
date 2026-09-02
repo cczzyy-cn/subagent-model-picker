@@ -184,9 +184,9 @@ export function apply(ctx: Context, config: Config): void {
     },
     isConcurrencySafe: () => true,
     async execute(args: { provider?: string }, exec: any) {
-      const parent = exec.agent as any
-      const defaultProvider = config.defaultProvider ?? parentRoute(parent).provider
-      const provider = args.provider ?? defaultProvider
+      // No `provider` arg -> enumerate every configured provider (matches the
+      // tool description). Only restrict to one route when the caller asks.
+      const provider = args.provider
       const models = await catalog(provider)
       if (models.length === 0) {
         return provider
