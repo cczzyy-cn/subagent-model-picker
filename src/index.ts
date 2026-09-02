@@ -151,7 +151,10 @@ export function apply(ctx: Context, config: Config): void {
       // through the catalog card. Fall back to the models it declares in its
       // settings section so the tool stays consistent with the card dropdown.
       if (models.length === 0) {
-        models = (await declaredModels(pid, llm)) ?? []
+        const fallback = (await declaredModels(pid, llm)) ?? []
+        // eslint-disable-next-line no-console
+        console.warn(`[subagent-model-picker] listModels("${pid}") empty; declared fallback=${fallback.length} (configured=${JSON.stringify((llm.listConfigurableProviders?.() ?? []).map((c: any) => c?.provider ?? c?.id))})`)
+        models = fallback
       }
       for (const model of models) {
         const id = model?.id

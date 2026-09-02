@@ -1,6 +1,6 @@
 {
   "name": "@dsh-external/dsh-subagent-model-picker",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "让主会话模型从已配置模型里自主选择子代理模型",
   "private": true,
   "type": "module",
