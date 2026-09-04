@@ -78,6 +78,9 @@ subagent-model-picker:
 - 通过 `agentOptions: { provider, model }` 覆盖子代理路由；省略时继承父会话路由。
 - `modelPool`（白名单）非空时硬性校验，不在白名单的路由会被拒绝。
 - `strictCatalog` 为 true 时拒绝不在广告目录里的 model。
+- **返回自带能力描述**（v0.4.0）：前台与后台两条返回路径都会追加
+  `[capabilities: <描述>]`，取自 `subagent-model-picker.descriptions`（经 `capabilityMap()`）。
+  无描述时该段为空，输出不变（向后兼容）。
 - ⚠️ `model` 传**裸 model id**（provider 单独经 `provider` 传）；`list_subagent_models` 展示的
   `provider/model` 仅作展示，勿整串填入 `model`。
 
@@ -185,6 +188,8 @@ dsh profile stop tmp               # 卸载后 profile 干净退出
 
 ## 版本要点
 
+- **v0.4.0** — `subagent_model` 前台/后台返回都追加所选路由的能力描述 `[capabilities: …]`
+  （来自 `subagent-model-picker.descriptions`），便于主模型对账；无描述时输出不变。
 - **v0.3.2** — `list_subagent_models` 无参调用**枚举所有** provider（此前被限制为默认 provider）；
   与卡片下拉一致，`qwen` 等非默认 provider 也会列出并可被选择。
 - **v0.3.x** — `declaredModels` 兜底：`listModels` 为空时从设置段读取声明的模型，覆盖本地/网关路由。
