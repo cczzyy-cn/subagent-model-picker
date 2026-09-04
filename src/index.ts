@@ -266,6 +266,10 @@ export function apply(ctx: Context, config: Config): void {
         throw new Error(`subagent_model: model "${provider}/${args.model}" is not in the advertised catalog for provider "${provider}"`)
       }
 
+      // 能力描述（用户维护的选型旁注）：随每次调用返回一起带上，便于主模型对账。
+      const caps = capabilityMap().get(`${provider}/${args.model}`) || ''
+      const capLabel = caps ? ` [capabilities: ${caps}]` : ''
+
       const agentOptions: any = { provider, model: args.model }
       if (args.reasoning_effort) agentOptions.reasoningEffort = args.reasoning_effort
 
@@ -300,7 +304,7 @@ export function apply(ctx: Context, config: Config): void {
           signal: exec.signal,
         })
         const note = known ? '' : ' (model not currently in the advertised catalog; requested anyway)'
-        return `started subagent ${childId} on ${provider}/${args.model}${note}`
+        return `started subagent ${childId} on ${provider}/${args.model}${note}${capLabel}`
       }
 
       // 前台：等待结果并收集文本。
@@ -312,7 +316,7 @@ export function apply(ctx: Context, config: Config): void {
         .map((b: any) => b?.text ?? '')
         .join('')
       const note = known ? '' : ' (model not currently in the advertised catalog; requested anyway)'
-      return `subagent ${run.id} finished on ${provider}/${args.model}${note}${output ? `\n\n${output}` : ''}`
+      return `subagent ${run.id} finished on ${provider}/${args.model}${note}${capLabel}${output ? `\n\n${output}` : ''}`
     },
   })), '@dsh-external/dsh-subagent-model-picker: subagent_model')
 
